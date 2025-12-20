@@ -2,98 +2,910 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DATA HAMMER GROUP TALKING SYSTEM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        body.main-bg {
-            background: radial-gradient(circle at center, #0a0a0a 0%, #1b1b1b 100%);
-            color: #fff;
-            font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        :root {
+            --primary-blue: #0066cc;
+            --secondary-blue: #0099ff;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --accent-purple: #8a2be2;
+            --accent-green: #00aa55;
+            --accent-red: #ff4444;
+            --accent-yellow: #ffaa00;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --border-color: #e1e5e9;
+            --shadow-color: rgba(0, 102, 204, 0.1);
+        }
+
+        * {
             margin: 0;
-            overflow: hidden;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .container {
-            text-align: center;
-            padding: 40px 60px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            box-shadow: 0 0 40px rgba(0, 200, 255, 0.2);
-            backdrop-filter: blur(10px);
-            animation: fadeIn 1.2s ease;
+        body.main-bg {
+            background: var(--light-bg);
+            color: var(--text-primary);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
         }
 
-        h1 {
-            font-size: 2.2rem;
-            letter-spacing: 2px;
-            color: #00e5ff;
-            margin-bottom: 40px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
-            animation: glowText 3s infinite alternate;
-        }
-
-        .button-container {
+        /* 左侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            padding: 40px 30px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 10;
         }
 
-        .button-container button {
-            background: linear-gradient(90deg, #00c6ff, #0072ff);
-            border: none;
-            color: white;
-            font-size: 1.1rem;
-            font-weight: bold;
-            padding: 14px 0;
+        .logo-container {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* 导航菜单 */
+        .nav-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px 20px;
+            background: #f5f7fa;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            border: 1px solid transparent;
+            text-decoration: none;
+            color: inherit;
         }
 
-        .button-container button:hover {
-            transform: scale(1.05);
-            background: linear-gradient(90deg, #0072ff, #00c6ff);
-            box-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+        .nav-item:hover {
+            background: rgba(0, 102, 204, 0.08);
+            border-color: rgba(0, 102, 204, 0.2);
+            transform: translateX(5px);
         }
 
-        .button-container button:active {
-            transform: scale(0.98);
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.1), rgba(138, 43, 226, 0.1));
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
         }
 
-        @keyframes glowText {
-            from { text-shadow: 0 0 10px #00e5ff; }
-            to { text-shadow: 0 0 25px #00ffff, 0 0 50px #00ffff; }
+        .nav-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 102, 204, 0.1);
+            border-radius: 10px;
+            color: var(--primary-blue);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .nav-text {
+            flex: 1;
+            font-size: 1.1rem;
+            font-weight: 500;
         }
 
-        /* 可选底部标识 */
-        .footer {
+        .nav-badge {
+            background: var(--accent-green);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* 右侧主内容区 */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-y: auto;
+            background: var(--light-bg);
+        }
+
+        .header {
+            margin-bottom: 50px;
+        }
+
+        .welcome-text {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+        }
+
+        /* 卡片网格 */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 35px 30px;
+            border: 1px solid var(--border-color);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .card::before {
+            content: '';
             position: absolute;
-            bottom: 15px;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--accent-purple));
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px var(--shadow-color);
+            border-color: rgba(0, 102, 204, 0.3);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-blue);
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+
+        .card-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 102, 204, 0.2);
+        }
+
+        .card-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 102, 204, 0.3);
+        }
+
+        /* 状态面板 */
+        .status-panel {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            margin-top: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .status-title {
+            font-size: 1.3rem;
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .last-updated {
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-blue);
+            transition: all 0.3s ease;
+        }
+
+        .status-item:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+        }
+
+        .status-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+
+        .status-icon {
+            font-size: 1.1rem;
+            color: var(--primary-blue);
+        }
+
+        .status-value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .status-trend {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 3px;
+        }
+
+        .trend-up {
+            color: var(--accent-green);
+        }
+
+        .trend-down {
+            color: var(--accent-red);
+        }
+
+        .trend-stable {
+            color: var(--accent-yellow);
+        }
+
+        /* 进度条样式 */
+        .status-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-safe {
+            background: linear-gradient(90deg, var(--accent-green), #00cc77);
+        }
+
+        .progress-warning {
+            background: linear-gradient(90deg, var(--accent-yellow), #ff8800);
+        }
+
+        .progress-danger {
+            background: linear-gradient(90deg, var(--accent-red), #ff2222);
+        }
+
+        /* 背景装饰 */
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(0, 102, 204, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        /* 页脚 */
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            body.main-bg {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                padding: 20px;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .nav-menu {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+
+            .nav-item {
+                min-width: 200px;
+            }
+
+            .main-content {
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-text {
+                font-size: 2.2rem;
+            }
+
+            .nav-text {
+                display: none;
+            }
+
+            .nav-icon {
+                width: 50px;
+                height: 50px;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 20px;
+            }
+
+            .card {
+                padding: 25px 20px;
+            }
+
+            .welcome-text {
+                font-size: 1.8rem;
+            }
+
+            .status-panel {
+                padding: 20px;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .card {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .card:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .status-updating {
+            animation: pulse 1s infinite;
         }
     </style>
 </head>
 <body class="main-bg">
-    <div class="container">
-        <h1>DATA HAMMER GROUP<br>TALKING SYSTEM</h1>
-        <div class="button-container">
-            <button onclick="window.location.href='/model_training'">训练模型</button>
-            <button onclick="window.location.href='/video_generation'">视频生成</button>
-            <button onclick="window.location.href='/chat_system'">人机对话</button>
+    <!-- 背景粒子 -->
+    <div class="bg-particles" id="particles"></div>
+
+    <!-- 左侧边栏 -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <div class="logo">DATA HAMMER</div>
+            <div class="tagline">TALKING SYSTEM</div>
+        </div>
+
+        <div class="nav-menu">
+            <a href="/model_training" class="nav-item active">
+                <div class="nav-icon">🤖</div>
+                <div class="nav-text">模型训练</div>
+                <div class="nav-badge">NEW</div>
+            </a>
+
+            <a href="/video_generation" class="nav-item">
+                <div class="nav-icon">🎬</div>
+                <div class="nav-text">视频生成</div>
+                <div class="nav-badge">PRO</div>
+            </a>
+
+            <a href="/chat_system" class="nav-item">
+                <div class="nav-icon">💬</div>
+                <div class="nav-text">人机对话</div>
+            </a>
         </div>
     </div>
-    <div class="footer">© 2025 DATA HAMMER LAB</div>
+
+    <!-- 右侧主内容 -->
+    <div class="main-content">
+        <div class="header">
+            <h1 class="welcome-text">欢迎使用AI对话系统</h1>
+            <p class="subtitle">选择下方功能卡片，开始体验下一代人机交互技术</p>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-icon">🤖</div>
+                <h3 class="card-title">智能模型训练</h3>
+                <p class="card-description">
+                    训练个性化的AI对话模型，支持多种语言和对话风格定制。
+                    使用先进的深度学习算法，打造专属的智能助手。
+                </p>
+                <button class="card-button" onclick="window.location.href='/model_training'">
+                    开始训练
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">🎬</div>
+                <h3 class="card-title">AI视频生成</h3>
+                <p class="card-description">
+                    将文本转换为高质量视频内容，支持语音合成和面部动画。
+                    创建逼真的数字人对话视频。
+                </p>
+                <button class="card-button" onclick="window.location.href='/video_generation'">
+                    生成视频
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">💬</div>
+                <h3 class="card-title">实时人机对话</h3>
+                <p class="card-description">
+                    与AI进行自然流畅的对话，支持语音和文本输入。
+                    体验智能问答、情感交流和个性化互动。
+                </p>
+                <button class="card-button" onclick="window.location.href='/chat_system'">
+                    开始对话
+                </button>
+            </div>
+        </div>
+
+        <!-- 动态状态面板 -->
+        <div class="status-panel">
+            <div class="status-header">
+                <h3 class="status-title">
+                    <span>⚡</span> 系统实时状态
+                </h3>
+                <div class="last-updated" id="last-updated">
+                    最后更新: <span id="update-time">正在获取...</span>
+                </div>
+            </div>
+
+            <div class="status-grid">
+                <!-- 模型状态 -->
+                <div class="status-item" id="model-status">
+                    <div class="status-info">
+                        <div class="status-label">
+                            <span class="status-icon">🤖</span>
+                            <span>模型状态</span>
+                        </div>
+                        <div class="status-value" id="model-status-value">在线</div>
+                        <div class="status-trend" id="model-trend">
+                            <span id="model-uptime">稳定运行 8小时</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GPU资源 -->
+                <div class="status-item" id="gpu-status">
+                    <div class="status-info">
+                        <div class="status-label">
+                            <span class="status-icon">🎮</span>
+                            <span>GPU资源</span>
+                        </div>
+                        <div class="status-value" id="gpu-usage">85%</div>
+                        <div class="status-trend" id="gpu-trend">
+                            <span id="gpu-change">↑ 2%</span>
+                            <span class="trend-up">较上次</span>
+                        </div>
+                        <div class="status-progress">
+                            <div class="progress-bar progress-safe" id="gpu-progress" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 存储空间 -->
+                <div class="status-item" id="storage-status">
+                    <div class="status-info">
+                        <div class="status-label">
+                            <span class="status-icon">💾</span>
+                            <span>存储空间</span>
+                        </div>
+                        <div class="status-value" id="storage-usage">2.3TB</div>
+                        <div class="status-trend" id="storage-trend">
+                            <span id="storage-change">↓ 0.1TB</span>
+                            <span class="trend-down">较上次</span>
+                        </div>
+                        <div class="status-progress">
+                            <div class="progress-bar progress-warning" id="storage-progress" style="width: 65%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API响应 -->
+                <div class="status-item" id="api-status">
+                    <div class="status-info">
+                        <div class="status-label">
+                            <span class="status-icon">⚡</span>
+                            <span>API响应</span>
+                        </div>
+                        <div class="status-value" id="api-response">32ms</div>
+                        <div class="status-trend" id="api-trend">
+                            <span id="api-change">↔ 稳定</span>
+                            <span class="trend-stable">较上次</span>
+                        </div>
+                        <div class="status-progress">
+                            <div class="progress-bar progress-safe" id="api-progress" style="width: 25%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2025 DATA HAMMER LAB - 下一代人机交互技术平台
+        </div>
+    </div>
+
+    <script>
+        // 创建背景粒子效果（浅色系版本）
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 15;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+
+                // 随机大小
+                const size = Math.random() * 100 + 50;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+
+                // 随机位置
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+
+                // 随机透明度
+                particle.style.opacity = Math.random() * 0.05 + 0.02;
+
+                container.appendChild(particle);
+            }
+        }
+
+        // 模拟系统状态数据生成器
+        class SystemStatusSimulator {
+            constructor() {
+                this.status = {
+                    model: '在线',
+                    gpu: 85,
+                    storage: 2.3,
+                    api: 32,
+                    uptime: 8,
+                    lastUpdate: new Date()
+                };
+
+                this.trends = {
+                    gpu: 2,
+                    storage: -0.1,
+                    api: 0
+                };
+            }
+
+            generateUpdate() {
+                // 模拟数据波动
+                const variation = {
+                    gpu: Math.random() * 4 - 2, // -2到+2
+                    storage: (Math.random() * 0.2 - 0.1), // -0.1到+0.1
+                    api: Math.random() * 10 - 5, // -5到+5
+                    uptime: 0.1 // 每次增加0.1小时
+                };
+
+                // 更新状态
+                this.status.gpu = Math.max(60, Math.min(95, this.status.gpu + variation.gpu));
+                this.status.storage = Math.max(1.5, Math.min(3.0, this.status.storage + variation.storage));
+                this.status.api = Math.max(15, Math.min(80, this.status.api + variation.api));
+                this.status.uptime += variation.uptime;
+                this.status.lastUpdate = new Date();
+
+                // 更新趋势
+                this.trends.gpu = variation.gpu > 0 ? Math.abs(variation.gpu) : -Math.abs(variation.gpu);
+                this.trends.storage = variation.storage > 0 ? Math.abs(variation.storage) : -Math.abs(variation.storage);
+                this.trends.api = Math.abs(variation.api) < 2 ? 0 : variation.api;
+
+                // 小概率模型状态变化
+                if (Math.random() < 0.02) {
+                    this.status.model = Math.random() > 0.3 ? '在线' : '维护中';
+                }
+
+                return this.status;
+            }
+
+            getTrendData() {
+                return this.trends;
+            }
+
+            formatTime() {
+                return this.status.lastUpdate.toLocaleTimeString('zh-CN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+
+            formatUptime() {
+                const hours = Math.floor(this.status.uptime);
+                const minutes = Math.floor((this.status.uptime - hours) * 60);
+                return `稳定运行 ${hours}小时${minutes}分钟`;
+            }
+        }
+
+        // 初始化模拟器
+        const simulator = new SystemStatusSimulator();
+
+        // 更新状态显示
+        function updateStatusDisplay() {
+            const status = simulator.generateUpdate();
+            const trends = simulator.getTrendData();
+
+            // 更新模型状态
+            const modelValue = document.getElementById('model-status-value');
+            const modelTrend = document.getElementById('model-uptime');
+            modelValue.textContent = status.model;
+            modelTrend.textContent = simulator.formatUptime();
+
+            // 更新GPU状态
+            const gpuValue = document.getElementById('gpu-usage');
+            const gpuChange = document.getElementById('gpu-change');
+            const gpuProgress = document.getElementById('gpu-progress');
+            gpuValue.textContent = `${Math.round(status.gpu)}%`;
+            gpuProgress.style.width = `${status.gpu}%`;
+
+            if (trends.gpu > 0) {
+                gpuChange.innerHTML = `↑ ${Math.abs(trends.gpu).toFixed(1)}%`;
+                gpuChange.className = 'trend-up';
+            } else if (trends.gpu < 0) {
+                gpuChange.innerHTML = `↓ ${Math.abs(trends.gpu).toFixed(1)}%`;
+                gpuChange.className = 'trend-down';
+            } else {
+                gpuChange.innerHTML = `↔ 稳定`;
+                gpuChange.className = 'trend-stable';
+            }
+
+            // 更新存储状态
+            const storageValue = document.getElementById('storage-usage');
+            const storageChange = document.getElementById('storage-change');
+            const storageProgress = document.getElementById('storage-progress');
+            storageValue.textContent = `${status.storage.toFixed(1)}TB`;
+            storageProgress.style.width = `${(status.storage / 3.0 * 100)}%`;
+
+            if (trends.storage > 0) {
+                storageChange.innerHTML = `↑ ${Math.abs(trends.storage).toFixed(2)}TB`;
+                storageChange.className = 'trend-up';
+            } else if (trends.storage < 0) {
+                storageChange.innerHTML = `↓ ${Math.abs(trends.storage).toFixed(2)}TB`;
+                storageChange.className = 'trend-down';
+            } else {
+                storageChange.innerHTML = `↔ 稳定`;
+                storageChange.className = 'trend-stable';
+            }
+
+            // 更新API状态
+            const apiValue = document.getElementById('api-response');
+            const apiChange = document.getElementById('api-change');
+            const apiProgress = document.getElementById('api-progress');
+            apiValue.textContent = `${Math.round(status.api)}ms`;
+            apiProgress.style.width = `${(status.api / 100 * 100)}%`;
+
+            if (trends.api > 2) {
+                apiChange.innerHTML = `↑ ${Math.abs(trends.api).toFixed(0)}ms`;
+                apiChange.className = 'trend-up';
+            } else if (trends.api < -2) {
+                apiChange.innerHTML = `↓ ${Math.abs(trends.api).toFixed(0)}ms`;
+                apiChange.className = 'trend-down';
+            } else {
+                apiChange.innerHTML = `↔ 稳定`;
+                apiChange.className = 'trend-stable';
+            }
+
+            // 更新进度条颜色
+            updateProgressColors(status);
+
+            // 更新时间显示
+            document.getElementById('update-time').textContent = simulator.formatTime();
+
+            // 添加更新动画
+            document.querySelectorAll('.status-value').forEach(el => {
+                el.classList.add('status-updating');
+                setTimeout(() => el.classList.remove('status-updating'), 500);
+            });
+        }
+
+        // 更新进度条颜色
+        function updateProgressColors(status) {
+            const gpuProgress = document.getElementById('gpu-progress');
+            const storageProgress = document.getElementById('storage-progress');
+            const apiProgress = document.getElementById('api-progress');
+
+            // GPU颜色
+            if (status.gpu > 90) {
+                gpuProgress.className = 'progress-bar progress-danger';
+            } else if (status.gpu > 80) {
+                gpuProgress.className = 'progress-bar progress-warning';
+            } else {
+                gpuProgress.className = 'progress-bar progress-safe';
+            }
+
+            // 存储颜色（假设3TB总容量）
+            const storagePercent = (status.storage / 3.0) * 100;
+            if (storagePercent > 90) {
+                storageProgress.className = 'progress-bar progress-danger';
+            } else if (storagePercent > 70) {
+                storageProgress.className = 'progress-bar progress-warning';
+            } else {
+                storageProgress.className = 'progress-bar progress-safe';
+            }
+
+            // API颜色
+            if (status.api > 60) {
+                apiProgress.className = 'progress-bar progress-danger';
+            } else if (status.api > 40) {
+                apiProgress.className = 'progress-bar progress-warning';
+            } else {
+                apiProgress.className = 'progress-bar progress-safe';
+            }
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+
+            // 添加导航点击效果
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-item').forEach(nav => {
+                        nav.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+
+            // 添加卡片悬停效果
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    const icon = card.querySelector('.card-icon');
+                    icon.style.transform = 'scale(1.1)';
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    const icon = card.querySelector('.card-icon');
+                    icon.style.transform = 'scale(1)';
+                });
+            });
+
+            // 初始更新
+            updateStatusDisplay();
+
+            // 每8秒更新一次状态
+            setInterval(updateStatusDisplay, 8000);
+        });
+    </script>
 </body>
 </html>

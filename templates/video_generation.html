@@ -1,90 +1,1011 @@
 <!DOCTYPE html>
 <html lang="zh">
-
 <head>
     <meta charset="UTF-8">
-    <title>视频生成界面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频生成系统 - DATA HAMMER</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --primary-blue: #0066cc;
+            --secondary-blue: #0099ff;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --accent-purple: #8a2be2;
+            --accent-green: #00aa55;
+            --accent-red: #ff4444;
+            --accent-yellow: #ffaa00;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --border-color: #e1e5e9;
+            --shadow-color: rgba(0, 102, 204, 0.1);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body.subpage-bg {
+            background: var(--light-bg);
+            color: var(--text-primary);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            max-width: 1200px;
+            margin: 0 auto 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0, 102, 204, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0;
+        }
+
+        .header-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--primary-blue);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .back-button:hover {
+            background: var(--secondary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+        }
+
+        /* 主容器 */
+        .video-gen-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .video-gen-container {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+        }
+
+        /* 视频预览区 */
+        .video-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin: 0;
+        }
+
+        .section-icon {
+            font-size: 1.8rem;
+        }
+
+        .video-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-btn:hover {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        /* 视频播放器 */
+        .video-player-wrapper {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 20px;
+        }
+
+        #outputVideo {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* 进度指示器 */
+        .progress-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .progress-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .progress-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s linear infinite;
+        }
+
+        .progress-text {
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        /* 视频信息面板 */
+        .video-info-panel {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* 配置表单区 */
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .config-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        #videoForm {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .form-group label .required {
+            color: var(--accent-red);
+        }
+
+        select, input[type="text"], textarea {
+            padding: 14px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: #f8fafc;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 45px;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* 文件上传 */
+        .file-upload {
+            position: relative;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary-blue);
+            background: rgba(0, 102, 204, 0.05);
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .file-preview {
+            margin-top: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: none;
+        }
+
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+        }
+
+        /* 生成按钮 */
+        .generate-button {
+            position: relative;
+            padding: 18px 30px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .generate-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 102, 204, 0.3);
+        }
+
+        .generate-button:active {
+            transform: translateY(-1px);
+        }
+
+        .generate-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        /* 高级设置 */
+        .advanced-settings {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .settings-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        /* 通知系统 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            max-width: 350px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success-color);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .notification.error {
+            background: var(--accent-red);
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+        }
+
+        .notification.info {
+            background: var(--primary-blue);
+            box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+        }
+
+        /* 动画 */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            .header-title h1 {
+                font-size: 1.8rem;
+            }
+
+            .header-subtitle {
+                font-size: 1rem;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .video-controls {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .info-grid,
+            .settings-content {
+                grid-template-columns: 1fr;
+            }
+
+            .video-section,
+            .config-card {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body.subpage-bg {
+                padding: 15px;
+            }
+
+            .header-title h1 {
+                font-size: 1.6rem;
+            }
+
+            .section-title h2 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
 </head>
 
 <body class="subpage-bg">
-    <h2>视频生成界面</h2>
-    <div class="video-page-container">
-        <!-- 左边视频显示 -->
-        <div class="video-display">
-            <video id="outputVideo" controls width="420">
-                <source src="{{ url_for('static', filename='videos/sample.mp4') }}" type="video/mp4">
-            </video>
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-title">
+                <span style="font-size: 2rem;">🎬</span>
+                <h1>AI视频生成系统</h1>
+            </div>
+            <p class="header-subtitle">
+                基于文本和音频生成高质量视频内容，支持多种模型和配置选项
+            </p>
+        </div>
+        <a href="/" class="back-button">
+            <span>←</span>
+            返回主页
+        </a>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="video-gen-container">
+        <!-- 左侧：视频预览区 -->
+        <div class="video-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-icon">🎥</span>
+                    <h2>视频预览</h2>
+                </div>
+                <div class="video-controls">
+                    <button class="control-btn" id="downloadBtn" style="display: none;">
+                        <span>⬇️</span> 下载视频
+                    </button>
+                    <button class="control-btn" id="fullscreenBtn">
+                        <span>🔍</span> 全屏
+                    </button>
+                </div>
+            </div>
+
+            <div class="video-player-wrapper">
+                <video id="outputVideo" controls
+                       poster="{{ url_for('static', filename='images/video-poster.jpg') }}">
+                    <source src="{{ url_for('static', filename='videos/sample.mp4') }}" type="video/mp4">
+                    您的浏览器不支持视频播放
+                </video>
+
+                <div class="progress-overlay" id="progressOverlay">
+                    <div class="progress-spinner"></div>
+                    <div class="progress-text">正在生成视频，请稍候...</div>
+                </div>
+            </div>
+
+            <div class="video-info-panel">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">视频状态</div>
+                        <div class="info-value" id="videoStatus">就绪</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">分辨率</div>
+                        <div class="info-value" id="videoResolution">1920×1080</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">时长</div>
+                        <div class="info-value" id="videoDuration">00:00</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">文件大小</div>
+                        <div class="info-value" id="videoSize">-- MB</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- 右边输入表单 -->
+        <!-- 右侧：配置区 -->
         <div class="form-section">
-            <form id="videoForm">
-                <div class="form-group">
-                    <label>模型名称</label>
-                    <select name="model_name">
-                        <option value="model1">Model 1</option>
-                        <option value="model2">Model 2</option>
-                        <option value="SyncTalk">SyncTalk</option>
-                    </select>
+            <div class="config-card">
+                <div class="section-title">
+                    <span class="section-icon">⚙️</span>
+                    <h2>生成配置</h2>
                 </div>
 
-                <div class="form-group">
-                    <label>模型目录地址</label>
-                    <input type="text" name="model_param" placeholder="请输入模型目录路径">
-                </div>
+                <form id="videoForm">
+                    <div class="form-group">
+                        <label>
+                            <span>🤖</span>
+                            生成模型
+                            <span class="required">*</span>
+                        </label>
+                        <select name="model_name" required id="modelSelect">
+                            <option value="">请选择模型</option>
+                            <option value="model1">Model 1 - 标准视频模型</option>
+                            <option value="model2">Model 2 - 高清视频模型</option>
+                            <option value="SyncTalk">SyncTalk - 实时同步模型</option>
+                            <option value="custom">自定义模型</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label>参考音频地址</label>
-                    <input type="text" name="ref_audio" placeholder="请输入音频路径">
-                </div>
-                
-                <div class="form-group">
-                    <label>GPU选择</label>
-                    <select name="gpu_choice">
-                        <option value="GPU0">GPU 0</option>
-                        <option value="GPU1">GPU 1</option>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label>
+                            <span>📁</span>
+                            模型路径
+                        </label>
+                        <input type="text" name="model_param"
+                               placeholder="例如：models/video/v1.2"
+                               id="modelPath">
+                        <small style="color: var(--text-secondary); margin-top: 5px;">
+                            留空则使用默认模型
+                        </small>
+                    </div>
 
-                <div class="form-group">
-                    <label>目标文字（文本框）</label>
-                    <textarea name="target_text" placeholder="留空则直接使用参考音频"></textarea>
-                </div>
+                    <!-- 音频上传 -->
+                    <div class="form-group">
+                        <label>
+                            <span>🎵</span>
+                            参考音频
+                        </label>
+                        <div class="file-upload" id="audioUpload">
+                            <input type="file" id="audioFile" accept="audio/*">
+                            <div class="upload-icon">🎵</div>
+                            <div class="upload-text">点击上传音频文件</div>
+                            <div class="upload-hint">支持 MP3, WAV, M4A 格式，最大 50MB</div>
+                        </div>
+                        <div class="file-preview" id="audioPreview">
+                            <div class="file-name">
+                                <span>📄</span>
+                                <span id="audioFileName">未选择文件</span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="ref_audio" id="refAudioInput">
+                    </div>
 
-                <button type="submit" class="generate-btn">生成视频</button>
-            </form>
+                    <div class="form-group">
+                        <label>
+                            <span>🎮</span>
+                            GPU设备
+                        </label>
+                        <select name="gpu_choice">
+                            <option value="auto">自动选择（推荐）</option>
+                            <option value="GPU0">GPU 0 - NVIDIA RTX 4090 (24GB)</option>
+                            <option value="GPU1">GPU 1 - NVIDIA RTX 3090 (24GB)</option>
+                            <option value="multi">多GPU加速</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <span>📝</span>
+                            生成文本
+                        </label>
+                        <textarea name="target_text"
+                                  placeholder="输入要生成的视频内容描述，留空则使用音频内容"
+                                  id="targetText"></textarea>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                            <small style="color: var(--text-secondary);">
+                                支持中英文描述，建议详细描述
+                            </small>
+                            <small id="textCount">0/500</small>
+                        </div>
+                    </div>
+
+                    <!-- 高级设置 -->
+                    <div class="advanced-settings">
+                        <div class="settings-header">
+                            <div class="settings-title">
+                                <span>⚡</span>
+                                高级设置
+                            </div>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="advancedToggle">
+                                启用高级选项
+                            </label>
+                        </div>
+
+                        <div class="settings-content" id="advancedSettings" style="display: none;">
+                            <div class="setting-item">
+                                <label>视频质量</label>
+                                <select name="quality">
+                                    <option value="standard">标准 (1080p)</option>
+                                    <option value="high">高清 (2K)</option>
+                                    <option value="ultra">超清 (4K)</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>帧率设置</label>
+                                <select name="fps">
+                                    <option value="24">24 FPS</option>
+                                    <option value="30" selected>30 FPS</option>
+                                    <option value="60">60 FPS</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>生成时长</label>
+                                <input type="number" name="duration" min="1" max="300" value="10">
+                                <small style="color: var(--text-secondary);">单位：秒</small>
+                            </div>
+                            <div class="setting-item">
+                                <label>输出格式</label>
+                                <select name="format">
+                                    <option value="mp4">MP4</option>
+                                    <option value="mov">MOV</option>
+                                    <option value="avi">AVI</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="generate-button" id="generateButton">
+                        <div class="button-content">
+                            <span>🎬 生成视频</span>
+                            <div class="spinner" id="generateSpinner"></div>
+                        </div>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
+    <!-- 通知系统 -->
+    <div id="notification" class="notification"></div>
+
     <script>
-        document.getElementById('videoForm').addEventListener('submit', function (e) {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM元素
+            const videoEl = document.getElementById('outputVideo');
+            const progressOverlay = document.getElementById('progressOverlay');
+            const generateButton = document.getElementById('generateButton');
+            const generateSpinner = document.getElementById('generateSpinner');
+            const videoForm = document.getElementById('videoForm');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const audioUpload = document.getElementById('audioUpload');
+            const audioFile = document.getElementById('audioFile');
+            const audioPreview = document.getElementById('audioPreview');
+            const audioFileName = document.getElementById('audioFileName');
+            const refAudioInput = document.getElementById('refAudioInput');
+            const targetText = document.getElementById('targetText');
+            const textCount = document.getElementById('textCount');
+            const advancedToggle = document.getElementById('advancedToggle');
+            const advancedSettings = document.getElementById('advancedSettings');
+            const notification = document.getElementById('notification');
 
-            const formData = new FormData(this);
+            // 音频文件上传处理
+            let uploadedAudioFile = null;
 
-            fetch('/video_generation', {
-                method: 'POST',
-                body: formData
-            })
-                .then(res => res.json())
-                .then(data => {
-                    console.log("后端返回:", data);
+            audioUpload.addEventListener('click', () => audioFile.click());
+
+            audioFile.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // 验证文件类型
+                    const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/x-m4a'];
+                    if (!validTypes.includes(file.type)) {
+                        showNotification('❌ 请上传有效的音频文件 (MP3/WAV/M4A)', 'error');
+                        return;
+                    }
+
+                    // 验证文件大小 (50MB)
+                    if (file.size > 50 * 1024 * 1024) {
+                        showNotification('❌ 文件过大，请选择小于50MB的音频文件', 'error');
+                        return;
+                    }
+
+                    uploadedAudioFile = file;
+                    audioFileName.textContent = file.name;
+                    audioPreview.style.display = 'block';
+                    refAudioInput.value = file.name;
+
+                    showNotification('✅ 音频文件已上传', 'success');
+
+                    // 可以在这里预览音频
+                    playAudioPreview(file);
+                }
+            });
+
+            // 播放音频预览
+            function playAudioPreview(file) {
+                const audio = new Audio(URL.createObjectURL(file));
+                audio.onloadedmetadata = () => {
+                    console.log('音频时长:', audio.duration, '秒');
+                };
+            }
+
+            // 文本计数
+            targetText.addEventListener('input', function() {
+                const count = this.value.length;
+                textCount.textContent = `${count}/500`;
+                if (count > 500) {
+                    textCount.style.color = 'var(--accent-red)';
+                } else {
+                    textCount.style.color = 'var(--text-secondary)';
+                }
+            });
+
+            // 高级设置切换
+            advancedToggle.addEventListener('change', function() {
+                advancedSettings.style.display = this.checked ? 'grid' : 'none';
+            });
+
+            // 显示通知
+            function showNotification(message, type = 'info') {
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.classList.add('show');
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            // 视频信息更新
+            videoEl.addEventListener('loadedmetadata', function() {
+                // 分辨率
+                const resolution = `${this.videoWidth}×${this.videoHeight}`;
+                document.getElementById('videoResolution').textContent = resolution;
+
+                // 时长
+                const duration = Math.floor(this.duration);
+                const mins = Math.floor(duration / 60);
+                const secs = duration % 60;
+                document.getElementById('videoDuration').textContent =
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                // 文件大小估算 (假设码率)
+                const estimatedSize = Math.round((this.videoWidth * this.videoHeight * 30 * duration) / (8 * 1024 * 1024));
+                document.getElementById('videoSize').textContent = `${estimatedSize} MB`;
+
+                // 显示下载按钮
+                downloadBtn.style.display = 'inline-flex';
+            });
+
+            videoEl.addEventListener('waiting', () => {
+                document.getElementById('videoStatus').textContent = '缓冲中...';
+            });
+
+            videoEl.addEventListener('playing', () => {
+                document.getElementById('videoStatus').textContent = '播放中';
+            });
+
+            // 下载视频
+            downloadBtn.addEventListener('click', function() {
+                const link = document.createElement('a');
+                link.href = videoEl.src;
+                link.download = `generated-video-${new Date().getTime()}.mp4`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showNotification('📥 开始下载视频文件', 'success');
+            });
+
+            // 全屏播放
+            fullscreenBtn.addEventListener('click', function() {
+                if (videoEl.requestFullscreen) {
+                    videoEl.requestFullscreen();
+                } else if (videoEl.webkitRequestFullscreen) {
+                    videoEl.webkitRequestFullscreen();
+                } else if (videoEl.mozRequestFullScreen) {
+                    videoEl.mozRequestFullScreen();
+                } else if (videoEl.msRequestFullscreen) {
+                    videoEl.msRequestFullscreen();
+                }
+            });
+
+            // 表单提交
+            videoForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // 表单验证
+                const modelName = document.querySelector('select[name="model_name"]').value;
+                if (!modelName) {
+                    showNotification('❌ 请选择生成模型', 'error');
+                    return;
+                }
+
+                // 禁用按钮并显示加载状态
+                generateButton.disabled = true;
+                generateButton.querySelector('span').textContent = '生成中...';
+                generateSpinner.style.display = 'block';
+                progressOverlay.classList.add('show');
+
+                const formData = new FormData(this);
+
+                // 如果上传了音频文件，添加到FormData
+                if (uploadedAudioFile) {
+                    formData.append('audio_file', uploadedAudioFile);
+                }
+
+                try {
+                    // 发送请求
+                    const response = await fetch('/video_generation', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
                     if (data.status === 'success') {
-                        const videoEl = document.getElementById('outputVideo');
-                        const newSrc = data.video_path + '?t=' + new Date().getTime();
+                        // 更新视频
+                        const newSrc = data.video_path + '?t=' + Date.now();
                         videoEl.src = newSrc;
                         videoEl.load();
-                        videoEl.play().catch(err => console.warn('自动播放被阻止:', err));
+
+                        // 等待视频加载完成
+                        await new Promise((resolve) => {
+                            videoEl.onloadeddata = resolve;
+                            videoEl.onerror = resolve;
+                            setTimeout(resolve, 3000);
+                        });
+
+                        // 更新视频信息
+                        document.getElementById('videoStatus').textContent = '已加载';
+
+                        showNotification('✅ 视频生成成功！', 'success');
                     } else {
-                        alert('视频生成失败！');
+                        throw new Error(data.message || '视频生成失败');
                     }
-                })
-                .catch(err => console.error('错误:', err));
+
+                } catch (error) {
+                    console.error('生成错误:', error);
+                    showNotification('❌ ' + error.message, 'error');
+                } finally {
+                    // 恢复按钮状态
+                    generateButton.disabled = false;
+                    generateButton.querySelector('span').textContent = '🎬 生成视频';
+                    generateSpinner.style.display = 'none';
+                    progressOverlay.classList.remove('show');
+                }
+            });
+
+            // 初始通知
+            setTimeout(() => {
+                showNotification('🎬 视频生成系统已就绪，请配置参数开始生成', 'info');
+            }, 1000);
         });
-
     </script>
-
 </body>
-
 </html>

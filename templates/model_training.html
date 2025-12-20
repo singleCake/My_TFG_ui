@@ -1,92 +1,817 @@
 <!DOCTYPE html>
 <html lang="zh">
-
 <head>
     <meta charset="UTF-8">
-    <title>模型训练界面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型训练系统 - DATA HAMMER</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --primary-blue: #0066cc;
+            --secondary-blue: #0099ff;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --accent-purple: #8a2be2;
+            --accent-green: #00aa55;
+            --accent-red: #ff4444;
+            --accent-yellow: #ffaa00;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --border-color: #e1e5e9;
+            --shadow-color: rgba(0, 102, 204, 0.1);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body.subpage-bg {
+            background: var(--light-bg);
+            color: var(--text-primary);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 头部导航 */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-title h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--primary-blue);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: var(--secondary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+        }
+
+        /* 主容器 */
+        .training-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .training-container {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+
+        /* 视频展示区 */
+        .video-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 102, 204, 0.1);
+        }
+
+        .section-title .icon {
+            font-size: 1.6rem;
+        }
+
+        .video-wrapper {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 20px;
+        }
+
+        #trainVideo {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 15px;
+        }
+
+        .video-info {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* 表单区域 */
+        .form-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 102, 204, 0.1);
+        }
+
+        .form-title .icon {
+            font-size: 1.6rem;
+        }
+
+        #trainForm {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .form-group label .required {
+            color: var(--accent-red);
+        }
+
+        select, input[type="text"], input[type="number"], textarea {
+            padding: 14px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: #f8fafc;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input[type="text"]:focus,
+        input[type="number"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 45px;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* 训练状态指示器 */
+        .training-status {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--accent-purple));
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .status-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* 训练按钮 */
+        .training-button {
+            position: relative;
+            padding: 18px 30px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .training-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 102, 204, 0.3);
+        }
+
+        .training-button:active {
+            transform: translateY(-1px);
+        }
+
+        .training-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        /* 通知区域 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            max-width: 350px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success-color);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .notification.error {
+            background: var(--accent-red);
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+        }
+
+        .notification.info {
+            background: var(--primary-blue);
+            box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+        }
+
+        /* 动画 */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            .page-title h1 {
+                font-size: 1.8rem;
+            }
+
+            .training-container {
+                padding: 0 10px;
+            }
+
+            .video-section,
+            .form-section {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title h1 {
+                font-size: 1.6rem;
+            }
+
+            .section-title,
+            .form-title {
+                font-size: 1.2rem;
+            }
+
+            select, input[type="text"], input[type="number"], textarea {
+                padding: 12px 14px;
+            }
+        }
+    </style>
 </head>
 
 <body class="subpage-bg">
-    <h2>模型训练界面</h2>
-    <div class="video-page-container">
-        <!-- 左侧：训练结果视频 -->
-        <div class="video-display">
-            <video id="trainVideo" controls width="420">
-                <source src="{{ url_for('static', filename='videos/sample.mp4') }}" type="video/mp4">
-            </video>
+    <!-- 头部导航 -->
+    <div class="page-header">
+        <div class="page-title">
+            <span class="icon">🤖</span>
+            <h1>模型训练系统</h1>
+        </div>
+        <a href="/" class="back-button">
+            <span>←</span>
+            返回主页
+        </a>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="training-container">
+        <!-- 左侧：视频展示区 -->
+        <div class="video-section">
+            <div class="section-title">
+                <span class="icon">🎬</span>
+                <span>训练结果预览</span>
+            </div>
+
+            <div class="video-wrapper">
+                <video id="trainVideo" controls poster="{{ url_for('static', filename='images/video-poster.jpg') }}">
+                    <source src="{{ url_for('static', filename='videos/sample.mp4') }}" type="video/mp4">
+                    您的浏览器不支持视频播放
+                </video>
+            </div>
+
+            <div class="video-info">
+                <div class="info-item">
+                    <span class="info-label">视频状态：</span>
+                    <span class="info-value" id="videoStatus">就绪</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">分辨率：</span>
+                    <span class="info-value" id="videoResolution">1920×1080</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">时长：</span>
+                    <span class="info-value" id="videoDuration">00:00</span>
+                </div>
+            </div>
+
+            <!-- 训练状态指示器 -->
+            <div class="training-status" id="trainingStatus">
+                <div class="status-header">
+                    <div class="status-indicator"></div>
+                    <div class="status-title">训练进行中...</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="trainingProgress"></div>
+                </div>
+                <div class="status-details">
+                    <span id="currentStep">初始化训练环境</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+            </div>
         </div>
 
-        <!-- 右侧：输入框 -->
+        <!-- 右侧：训练配置表单 -->
         <div class="form-section">
+            <div class="form-title">
+                <span class="icon">⚙️</span>
+                <span>训练参数配置</span>
+            </div>
+
             <form id="trainForm">
                 <div class="form-group">
-                    <label>模型选择</label>
-                    <select name="model_choice">
-                        <option value="modelA">Model A</option>
-                        <option value="modelB">Model B</option>
-                        <option value="SyncTalk">SyncTalk</option>
+                    <label>
+                        <span>📦</span>
+                        模型选择
+                        <span class="required">*</span>
+                    </label>
+                    <select name="model_choice" required>
+                        <option value="">请选择模型</option>
+                        <option value="modelA">Model A - 基础对话模型</option>
+                        <option value="modelB">Model B - 高级视觉模型</option>
+                        <option value="SyncTalk">SyncTalk - 实时同步模型</option>
+                        <option value="custom">自定义模型</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>参考视频/图像地址</label>
-                    <input type="text" name="ref_video" placeholder="请输入参考视频或图像的相对路径">
+                    <label>
+                        <span>📁</span>
+                        训练数据路径
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" name="ref_video"
+                           placeholder="例如：static/videos/training_data.mp4"
+                           required>
+                    <small style="color: var(--text-secondary); margin-top: 5px;">
+                        支持视频文件或图像序列目录
+                    </small>
                 </div>
 
                 <div class="form-group">
-                    <label>GPU选择</label>
+                    <label>
+                        <span>🎮</span>
+                        GPU设备选择
+                    </label>
                     <select name="gpu_choice">
-                        <option value="GPU0">GPU 0</option>
-                        <option value="GPU1">GPU 1</option>
+                        <option value="auto">自动选择（推荐）</option>
+                        <option value="GPU0">GPU 0 - NVIDIA RTX 4090 (24GB)</option>
+                        <option value="GPU1">GPU 1 - NVIDIA RTX 3090 (24GB)</option>
+                        <option value="multi">多GPU并行训练</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Epoch（训练轮数）</label>
-                    <input type="number" name="epoch" min="1" value="10">
+                    <label>
+                        <span>🔄</span>
+                        训练轮数 (Epochs)
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <input type="range" id="epochRange" min="1" max="100" value="10" style="flex: 1;">
+                        <input type="number" id="epochInput" name="epoch" min="1" max="100" value="10"
+                               style="width: 80px;">
+                    </div>
+                    <small style="color: var(--text-secondary); margin-top: 5px;">
+                        建议值：10-50轮，轮数越多训练越充分但耗时更长
+                    </small>
                 </div>
 
                 <div class="form-group">
-                    <label>自定义训练参数</label>
-                    <textarea name="custom_params" placeholder="请输入自定义参数..."></textarea>
+                    <label>
+                        <span>⚡</span>
+                        高级参数配置
+                    </label>
+                    <textarea name="custom_params"
+                              placeholder="输入自定义JSON参数，例如：
+{
+  &quot;learning_rate&quot;: 0.001,
+  &quot;batch_size&quot;: 16,
+  &quot;optimizer&quot;: &quot;adam&quot;
+}"></textarea>
                 </div>
 
-                <button type="submit" class="generate-btn">Training!</button>
+                <div class="form-group">
+                    <label>
+                        <span>📊</span>
+                        训练输出配置
+                    </label>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" name="save_checkpoint" checked>
+                            保存检查点
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" name="generate_log" checked>
+                            生成训练日志
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" name="export_model">
+                            导出最终模型
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="training-button" id="trainButton">
+                    <div class="button-content">
+                        <span>🚀 开始训练</span>
+                        <div class="spinner" id="trainSpinner"></div>
+                    </div>
+                </button>
             </form>
         </div>
     </div>
 
+    <!-- 通知区域 -->
+    <div id="notification" class="notification"></div>
+
     <script>
-        document.getElementById('trainForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-
-            // 立即从表单获取视频路径并播放
-            const refVideoPath = formData.get('ref_video');
+        document.addEventListener('DOMContentLoaded', function() {
+            // 视频元素和状态
             const videoEl = document.getElementById('trainVideo');
+            const videoStatus = document.getElementById('videoStatus');
+            const videoResolution = document.getElementById('videoResolution');
+            const videoDuration = document.getElementById('videoDuration');
+            const trainingStatus = document.getElementById('trainingStatus');
+            const progressBar = document.getElementById('trainingProgress');
+            const progressPercent = document.getElementById('progressPercent');
+            const currentStep = document.getElementById('currentStep');
 
-            if (refVideoPath) {
-                // 立即设置视频源并播放
-                const newSrc = "/" + refVideoPath.replace("\\", "/") + '?t=' + new Date().getTime();
-                videoEl.src = newSrc;
-                videoEl.load();
-                videoEl.play().catch(e => console.log('自动播放可能被阻止:', e));
+            // 表单元素
+            const trainForm = document.getElementById('trainForm');
+            const trainButton = document.getElementById('trainButton');
+            const trainSpinner = document.getElementById('trainSpinner');
+            const epochRange = document.getElementById('epochRange');
+            const epochInput = document.getElementById('epochInput');
+
+            // 通知系统
+            const notification = document.getElementById('notification');
+
+            // 同步滑动条和数字输入
+            epochRange.addEventListener('input', () => {
+                epochInput.value = epochRange.value;
+            });
+
+            epochInput.addEventListener('input', () => {
+                let value = Math.min(100, Math.max(1, parseInt(epochInput.value) || 1));
+                epochInput.value = value;
+                epochRange.value = value;
+            });
+
+            // 视频状态监听
+            videoEl.addEventListener('loadedmetadata', () => {
+                videoResolution.textContent = `${videoEl.videoWidth}×${videoEl.videoHeight}`;
+                const duration = Math.floor(videoEl.duration);
+                const minutes = Math.floor(duration / 60);
+                const seconds = duration % 60;
+                videoDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                videoStatus.textContent = '已加载';
+            });
+
+            videoEl.addEventListener('waiting', () => {
+                videoStatus.textContent = '缓冲中...';
+            });
+
+            videoEl.addEventListener('playing', () => {
+                videoStatus.textContent = '播放中';
+            });
+
+            // 显示通知
+            function showNotification(message, type = 'info') {
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.classList.add('show');
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
             }
 
-            fetch('/model_training', {
-                method: 'POST',
-                body: formData
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        alert('训练完成！');
+            // 模拟训练进度
+            function simulateTrainingProgress() {
+                let progress = 0;
+                const steps = [
+                    '初始化训练环境...',
+                    '加载训练数据...',
+                    '准备模型架构...',
+                    '开始训练迭代...',
+                    '保存检查点...',
+                    '生成训练报告...',
+                    '完成训练任务'
+                ];
+
+                const interval = setInterval(() => {
+                    progress += 1;
+                    progressBar.style.width = `${progress}%`;
+                    progressPercent.textContent = `${progress}%`;
+
+                    // 更新当前步骤
+                    const stepIndex = Math.floor(progress / (100 / steps.length));
+                    if (stepIndex < steps.length) {
+                        currentStep.textContent = steps[stepIndex];
                     }
-                })
-                .catch(err => console.error('错误:', err));
+
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        trainButton.disabled = false;
+                        trainButton.querySelector('span').textContent = '🚀 训练完成';
+                        trainSpinner.style.display = 'none';
+
+                        // 显示完成通知
+                        showNotification('🎉 模型训练完成！训练报告已生成。', 'success');
+
+                        // 3秒后隐藏状态指示器
+                        setTimeout(() => {
+                            trainingStatus.style.display = 'none';
+                        }, 3000);
+                    }
+                }, 100);
+            }
+
+            // 表单提交处理
+            trainForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // 表单验证
+                const formData = new FormData(this);
+                const refVideoPath = formData.get('ref_video');
+
+                if (!refVideoPath) {
+                    showNotification('请填写训练数据路径', 'error');
+                    return;
+                }
+
+                // 显示训练状态
+                trainingStatus.style.display = 'block';
+                trainButton.disabled = true;
+                trainButton.querySelector('span').textContent = '训练中...';
+                trainSpinner.style.display = 'block';
+
+                // 重置进度条
+                progressBar.style.width = '0%';
+                progressPercent.textContent = '0%';
+                currentStep.textContent = '初始化训练环境...';
+
+                // 显示开始通知
+                showNotification('🚀 开始模型训练，请耐心等待...', 'info');
+
+                try {
+                    // 如果有视频路径，尝试加载视频
+                    if (refVideoPath) {
+                        const newSrc = refVideoPath.startsWith('http')
+                            ? refVideoPath
+                            : "/" + refVideoPath.replace("\\", "/") + '?t=' + Date.now();
+
+                        videoEl.src = newSrc;
+                        videoEl.load();
+                        videoStatus.textContent = '加载训练数据...';
+
+                        await new Promise((resolve) => {
+                            videoEl.onloadeddata = resolve;
+                            setTimeout(resolve, 1000); // 超时保护
+                        });
+
+                        videoStatus.textContent = '就绪';
+                    }
+
+                    // 模拟后端请求
+                    const response = await fetch('/model_training', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.status === 'success') {
+                        // 开始模拟训练进度
+                        simulateTrainingProgress();
+
+                        // 更新视频信息
+                        if (data.video_info) {
+                            videoResolution.textContent = data.video_info.resolution || '1920×1080';
+                            videoDuration.textContent = data.video_info.duration || '00:00';
+                        }
+                    } else {
+                        throw new Error(data.message || '训练失败');
+                    }
+
+                } catch (error) {
+                    console.error('训练错误:', error);
+
+                    // 恢复按钮状态
+                    trainButton.disabled = false;
+                    trainButton.querySelector('span').textContent = '🚀 开始训练';
+                    trainSpinner.style.display = 'none';
+                    trainingStatus.style.display = 'none';
+
+                    // 显示错误通知
+                    showNotification('❌ ' + error.message, 'error');
+                }
+            });
+
+            // 初始加载完成通知
+            setTimeout(() => {
+                showNotification('✅ 模型训练系统已就绪，请配置参数开始训练', 'info');
+            }, 1000);
         });
     </script>
 </body>
-
 </html>
