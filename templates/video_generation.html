@@ -443,6 +443,75 @@
             margin-top: 20px;
         }
 
+        /* 日志控制台 */
+        .console-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .console-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .console-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .console-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .console-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .console-btn:hover {
+            background: var(--primary-blue);
+            color: #fff;
+            border-color: var(--primary-blue);
+        }
+
+        .console-body {
+            background: #0f172a;
+            color: #dbeafe;
+            border-radius: 12px;
+            min-height: 160px;
+            max-height: 260px;
+            padding: 14px;
+            font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            line-height: 1.5;
+        }
+
+        .console-line {
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding: 2px 0;
+        }
+
         .settings-header {
             display: flex;
             align-items: center;
@@ -643,6 +712,19 @@
                     </div>
                 </div>
             </div>
+
+            <div class="console-card">
+                <div class="console-header-row">
+                    <div class="console-title">
+                        <span>🖥️</span>
+                        <span>生成日志</span>
+                    </div>
+                    <div class="console-actions">
+                        <button class="console-btn" id="clearLogBtn">清空</button>
+                    </div>
+                </div>
+                <div class="console-body" id="logConsole"></div>
+            </div>
         </div>
 
         <!-- 右侧：配置区 -->
@@ -812,6 +894,8 @@
             const advancedToggle = document.getElementById('advancedToggle');
             const advancedSettings = document.getElementById('advancedSettings');
             const notification = document.getElementById('notification');
+            const logConsole = document.getElementById('logConsole');
+            const clearLogBtn = document.getElementById('clearLogBtn');
 
             // 音频文件上传处理
             let uploadedAudioFile = null;
@@ -822,7 +906,16 @@
                 const file = e.target.files[0];
                 if (file) {
                     // 验证文件类型
-                    const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/x-m4a'];
+                    const validTypes = [
+                        'audio/mp3',
+                        'audio/mpeg',
+                        'audio/wav',
+                        'audio/x-wav',
+                        'audio/m4a',
+                        'audio/x-m4a',
+                        'audio/mp4',
+                        'audio/aac'
+                    ];
                     if (!validTypes.includes(file.type)) {
                         showNotification('❌ 请上传有效的音频文件 (MP3/WAV/M4A)', 'error');
                         return;
@@ -880,6 +973,21 @@
                     notification.classList.remove('show');
                 }, 3000);
             }
+
+            // 日志控制台
+            function appendLog(line) {
+                const item = document.createElement('div');
+                item.className = 'console-line';
+                item.textContent = line;
+                logConsole.appendChild(item);
+                logConsole.scrollTop = logConsole.scrollHeight;
+            }
+
+            function resetLog() {
+                logConsole.textContent = '';
+            }
+
+            clearLogBtn.addEventListener('click', resetLog);
 
             // 视频信息更新
             videoEl.addEventListener('loadedmetadata', function() {
@@ -951,6 +1059,8 @@
                 generateButton.querySelector('span').textContent = '生成中...';
                 generateSpinner.style.display = 'block';
                 progressOverlay.classList.add('show');
+                resetLog();
+                appendLog('开始生成视频，正在启动 SyncTalk...');
 
                 const formData = new FormData(this);
 
@@ -960,46 +1070,88 @@
                 }
 
                 try {
-                    // 发送请求
-                    const response = await fetch('/video_generation', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    const videoPath = await streamGenerateVideo(formData);
 
-                    const data = await response.json();
-
-                    if (data.status === 'success') {
-                        // 更新视频
-                        const newSrc = data.video_path + '?t=' + Date.now();
-                        videoEl.src = newSrc;
-                        videoEl.load();
-
-                        // 等待视频加载完成
-                        await new Promise((resolve) => {
-                            videoEl.onloadeddata = resolve;
-                            videoEl.onerror = resolve;
-                            setTimeout(resolve, 3000);
-                        });
-
-                        // 更新视频信息
-                        document.getElementById('videoStatus').textContent = '已加载';
-
-                        showNotification('✅ 视频生成成功！', 'success');
-                    } else {
-                        throw new Error(data.message || '视频生成失败');
+                    if (!videoPath) {
+                        throw new Error('未获取到视频路径');
                     }
 
+                    const normalizedPath = videoPath.startsWith('/')
+                        ? videoPath
+                        : '/' + videoPath.replace(/\\/g, '/');
+
+                    const newSrc = normalizedPath + '?t=' + Date.now();
+                    videoEl.src = newSrc;
+                    videoEl.load();
+
+                    await new Promise((resolve) => {
+                        videoEl.onloadeddata = resolve;
+                        videoEl.onerror = resolve;
+                        setTimeout(resolve, 3000);
+                    });
+
+                    document.getElementById('videoStatus').textContent = '已加载';
+                    showNotification('✅ 视频生成成功！', 'success');
                 } catch (error) {
                     console.error('生成错误:', error);
                     showNotification('❌ ' + error.message, 'error');
+                    appendLog(`错误: ${error.message}`);
                 } finally {
-                    // 恢复按钮状态
                     generateButton.disabled = false;
                     generateButton.querySelector('span').textContent = '🎬 生成视频';
                     generateSpinner.style.display = 'none';
                     progressOverlay.classList.remove('show');
                 }
             });
+
+            // 流式获取后端日志与结果
+            async function streamGenerateVideo(formData) {
+                const response = await fetch('/video_generation/stream', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok || !response.body) {
+                    throw new Error('生成请求失败');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                let finalVideoPath = null;
+                let streamError = null;
+
+                const handleLine = (rawLine) => {
+                    const line = rawLine.trim();
+                    if (!line) return;
+                    appendLog(line);
+
+                    if (line.startsWith('__VIDEO_PATH__')) {
+                        finalVideoPath = line.replace('__VIDEO_PATH__', '').trim();
+                    } else if (line.startsWith('__ERROR__')) {
+                        streamError = line.replace('__ERROR__', '').trim();
+                    }
+                };
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const parts = buffer.split('\n');
+                    buffer = parts.pop();
+                    parts.forEach(handleLine);
+                }
+
+                if (buffer.trim()) {
+                    handleLine(buffer);
+                }
+
+                if (streamError) {
+                    throw new Error(streamError);
+                }
+
+                return finalVideoPath;
+            }
 
             // 初始通知
             setTimeout(() => {

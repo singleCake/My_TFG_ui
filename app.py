@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context
 from werkzeug.utils import secure_filename
 import os
-from backend.video_generator import generate_video
+import subprocess
+from backend.video_generator import generate_video, stream_generate_video
 from backend.model_trainer import train_model
 from backend.chat_engine import chat_response
 
@@ -17,6 +18,52 @@ def _map_gpu_choice(gpu_choice: str) -> str:
     # 前端的 auto / multi 统一回退到 GPU0
     return "GPU0"
 
+
+def _maybe_convert_audio_to_wav(path: str) -> str:
+    """Convert mp3/m4a to wav so SyncTalk pipeline can consume it reliably."""
+    ext = os.path.splitext(path)[1].lower()
+    if ext == '.wav':
+        return path
+
+    if ext not in {'.mp3', '.m4a'}:
+        return path
+
+    wav_path = os.path.splitext(path)[0] + '.wav'
+
+    try:
+        subprocess.run(
+            ['ffmpeg', '-y', '-i', path, wav_path],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return wav_path
+    except Exception as exc:
+        raise ValueError(f"音频格式转换失败，请确认 ffmpeg 可用: {exc}")
+
+
+def _prepare_video_request(req):
+    """Normalize request payload and persist uploaded audio."""
+    os.makedirs('./static/audios', exist_ok=True)
+    saved_audio_path = None
+    if 'audio_file' in req.files:
+        audio_file = req.files['audio_file']
+        if audio_file and audio_file.filename:
+            filename = secure_filename(audio_file.filename)
+            name, ext = os.path.splitext(filename)
+            filename = f"{int(__import__('time').time())}_{name}{ext}"
+            save_path = os.path.join('static', 'audios', filename)
+            audio_file.save(save_path)
+            saved_audio_path = _maybe_convert_audio_to_wav(save_path)
+
+    return {
+        "model_name": req.form.get('model_name'),
+        "model_param": req.form.get('model_param'),
+        "ref_audio": saved_audio_path or req.form.get('ref_audio'),
+        "gpu_choice": _map_gpu_choice(req.form.get('gpu_choice')),
+        "target_text": req.form.get('target_text'),
+    }
+
 # 首页
 @app.route('/')
 def index():
@@ -26,28 +73,7 @@ def index():
 @app.route('/video_generation', methods=['GET', 'POST'])
 def video_generation():
     if request.method == 'POST':
-        # 处理音频上传（字段名：audio_file）
-        os.makedirs('./static/audios', exist_ok=True)
-        saved_audio_path = None
-        if 'audio_file' in request.files:
-            audio_file = request.files['audio_file']
-            if audio_file and audio_file.filename:
-                filename = secure_filename(audio_file.filename)
-                # 避免重名，加入时间戳
-                name, ext = os.path.splitext(filename)
-                filename = f"{int(__import__('time').time())}_{name}{ext}"
-                save_path = os.path.join('static', 'audios', filename)
-                audio_file.save(save_path)
-                saved_audio_path = save_path
-
-        data = {
-            "model_name": request.form.get('model_name'),
-            "model_param": request.form.get('model_param'),
-            # 优先使用实际保存的音频路径
-            "ref_audio": saved_audio_path or request.form.get('ref_audio'),
-            "gpu_choice": _map_gpu_choice(request.form.get('gpu_choice')),
-            "target_text": request.form.get('target_text'),
-        }
+        data = _prepare_video_request(request)
 
         video_path = generate_video(data)
         # 前端使用的路径统一加前缀"/"并规范分隔符
@@ -116,6 +142,16 @@ def save_audio():
     audio_file.save('./static/audios/input.wav')
     
     return jsonify({'status': 'success', 'message': '音频保存成功'})
+
+
+@app.route('/video_generation/stream', methods=['POST'])
+def video_generation_stream():
+    data = _prepare_video_request(request)
+
+    def _event_stream():
+        yield from stream_generate_video(data)
+
+    return Response(stream_with_context(_event_stream()), mimetype='text/plain')
 
 
 if __name__ == '__main__':

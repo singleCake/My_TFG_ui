@@ -7,11 +7,8 @@ build/
 dist/
 *.egg-info/
 
-SyncTalk/
-
-SyncTalk-Docker/
+/SyncTalk/
+/SyncTalk-Docker/
 
 static/audios/
 static/videos/
-
-test_data/
